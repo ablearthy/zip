@@ -47,7 +47,7 @@ import Data.Fixed (Fixed (..))
 import Data.Foldable (foldl')
 import Data.Map.Strict (Map, (!))
 import Data.Map.Strict qualified as M
-import Data.Maybe (catMaybes, fromJust, isNothing)
+import Data.Maybe (catMaybes, fromJust, fromMaybe, isNothing)
 import Data.Sequence (Seq, (><), (|>))
 import Data.Sequence qualified as S
 import Data.Serialize
@@ -716,24 +716,21 @@ getCDHeader = do
       z64ef = case M.lookup 1 extraField of
         Nothing -> dfltZip64
         Just b -> parseZip64ExtraField dfltZip64 b
-  case mcompression of
-    Nothing -> return Nothing
-    Just compression ->
-      let desc =
-            EntryDescription
-              { edVersionMadeBy = versionMadeBy,
-                edVersionNeeded = versionNeeded,
-                edCompression = compression,
-                edModTime = fromMsDosTime (MsDosTime modDate modTime),
-                edCRC32 = crc32,
-                edCompressedSize = z64efCompressedSize z64ef,
-                edUncompressedSize = z64efUncompressedSize z64ef,
-                edOffset = z64efOffset z64ef,
-                edComment = if commentSize == 0 then Nothing else comment,
-                edExtraField = extraField,
-                edExternalFileAttrs = externalFileAttrs
-              }
-       in return $ (,desc) <$> (fileName >>= mkEntrySelector . T.unpack)
+  let desc =
+       EntryDescription
+         { edVersionMadeBy = versionMadeBy,
+           edVersionNeeded = versionNeeded,
+           edCompression = fromMaybe Store mcompression,
+           edModTime = fromMsDosTime (MsDosTime modDate modTime),
+           edCRC32 = crc32,
+           edCompressedSize = z64efCompressedSize z64ef,
+           edUncompressedSize = z64efUncompressedSize z64ef,
+           edOffset = z64efOffset z64ef,
+           edComment = if commentSize == 0 then Nothing else comment,
+           edExtraField = extraField,
+           edExternalFileAttrs = externalFileAttrs
+  }
+  return $ (,desc) <$> (fileName >>= mkEntrySelector . T.unpack)
 
 -- | Parse an extra-field.
 getExtraField :: Get (Word16, ByteString)
