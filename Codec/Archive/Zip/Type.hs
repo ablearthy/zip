@@ -107,7 +107,7 @@ mkEntrySelector path =
               binLength = B.length . T.encodeUtf8 . getEntryName
            in if Posix.isValid path
                 && Windows.isValid path
-                && not (FP.isAbsolute path || FP.hasTrailingPathSeparator path)
+                && not (FP.isAbsolute path)
                 && (CI.mk "." `notElem` pieces)
                 && (CI.mk ".." `notElem` pieces)
                 && binLength selector <= 0xffff
